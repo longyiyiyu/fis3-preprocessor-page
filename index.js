@@ -84,7 +84,8 @@ var BEFORE = "window.onload = function() {\
         }\
     }";
 var AFTER = "\
-    (function(opt) {\
+    var isDirect = !!$('html').attr('alpaca');\
+    !isDirect && (function(opt) {\
         var k, v, params, url;\
         var total = Object.keys(opt).length;\
         for (k in opt) {\
@@ -121,6 +122,7 @@ function expo(content, file, options) {
         dataFile = fis.file(dataFileName);
         dataFileContent = dataFile.getContent();
 
+        // console.log('>>> test file:', file.pageName, /preload\s*:\s*true/.test(dataFileContent));
         if (!/preload\s*:\s*true/.test(dataFileContent)) {
             // 快速检测
             return content;
@@ -145,6 +147,7 @@ function expo(content, file, options) {
             }
         });
 
+        // console.log('>>> list:', list);
         if (list.length) {
             ast = {
                 "type": "Program",
@@ -198,7 +201,7 @@ function expo(content, file, options) {
                         break;
                 }
             });
-            // fis.util.write(fis.util(file.dirname, 'test.js'), BEFORE + dataStr + AFTER + content + '};');
+            
             content = [BEFORE.replace(/@(\w*?)@/g, function(str, name) {
                 var ret;
                 switch (name) {
@@ -216,6 +219,8 @@ function expo(content, file, options) {
                 }
                 return ret || '';
             }), dataStr, AFTER, content, '};'].join('');
+            
+            // fis.util.write(fis.util(file.dirname, 'test.js'), content);
         }
     }
 
