@@ -116,10 +116,13 @@ function expo(content, file, options) {
     var ast;
     var dataFile;
     var dataFileName = file.dirname + '/data.page.js';
+    var dataESFileName = file.dirname + '/data.page.es';
     var dataFileContent;
+    var hasDataFile = fis.util.isFile(dataFileName);
+    var hasESDataFile = fis.util.isFile(dataESFileName);
 
-    if (fis.util.isFile(dataFileName)) {
-        dataFile = fis.file(dataFileName);
+    if (hasDataFile || hasESDataFile) {
+        dataFile = hasDataFile ? fis.file(dataFileName) : fis.file(dataESFileName);
         dataFileContent = dataFile.getContent();
 
         // console.log('>>> test file:', file.pageName, /preload\s*:\s*true/.test(dataFileContent));
