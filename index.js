@@ -116,7 +116,7 @@ function expo(content, file, options) {
     var ast;
     var dataFile;
     var dataFileName = file.dirname + '/data.page.js';
-    var dataESFileName = file.dirname + '/data.page.es';
+    var dataESFileName = file.dirname + '/data.page.es6.js';
     var dataFileContent;
     var hasDataFile = fis.util.isFile(dataFileName);
     var hasESDataFile = fis.util.isFile(dataESFileName);
