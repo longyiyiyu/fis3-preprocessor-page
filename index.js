@@ -54,9 +54,12 @@ var BEFORE = "window.onload = function() {\
             }\
         };\
     })();\
+    var tools = virtualPage.tools;\
+    var from = tools.bom.get('from');\
+    if (from === 'ios_dongtai') {\
+        WIN_NAME.set(window.DYNAMIC_KEY, 1);\
+    }\
     function addDefaultParams(url) {\
-        var tools = virtualPage.tools;\
-        var from = tools.bom.get('from');\
         var _ua = navigator.userAgent;\
         var _isIOS = tools.mobile.isIOS() && tools.mobile.qqVersion();\
         var bkn = getBkn();\
