@@ -83,11 +83,11 @@ var BEFORE = "window.onload = function() {\
         window.PRELOADDATA[key] = data;\
         if (++count >= total) {\
             window.PRELOADDATADONE = true;\
-            $(document).trigger('onPreloadDataReady');\
+            window.$ && $(document).trigger('onPreloadDataReady');\
         }\
     }";
 var AFTER = "\
-    var isDirect = !!$('html').attr('alpaca');\
+    var isDirect = !!document.documentElement.getAttribute('alpaca');\
     !isDirect && (function(opt) {\
         var k, v, params, url;\
         var total = Object.keys(opt).length;\
