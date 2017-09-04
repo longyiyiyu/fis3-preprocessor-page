@@ -5,8 +5,9 @@ var escodegen = require('escodegen');
 var Syntax = estraverse.Syntax;
 
 var BEFORE = "window.onload = function() {\
+    var _ua = navigator.userAgent.toLowerCase() || '';\
     function isWeiXin() {\
-        return navigator.userAgent.toLowerCase().indexOf('micromessenger') !== -1;\
+        return _ua.indexOf('micromessenger') !== -1 || (_ua.indexOf('educationapp') != -1 && getCookie('uid_type') == 2);\
     }\
     function getAuthKey() {\
         var a2 = getCookie('uid_a2');\
@@ -27,7 +28,6 @@ var BEFORE = "window.onload = function() {\
         return encryptSkey(getAuthKey());\
     }\
     var virtualPage = (function() {\
-        var ua = navigator.userAgent.toLowerCase() || '';\
         return {\
             tools: {\
                 bom: {\
@@ -39,7 +39,7 @@ var BEFORE = "window.onload = function() {\
                 },\
                 mobile: {\
                     qqVersion: function() {\
-                        var _match = ua.match(/qq\\/(\\d+\\.\\d+(\\.\\d+)?)/i);\
+                        var _match = _ua.match(/qq\\/(\\d+\\.\\d+(\\.\\d+)?)/i);\
                         return _match && _match[1] || 0;\
                     },\
                     isIOS: function() {\
@@ -60,7 +60,6 @@ var BEFORE = "window.onload = function() {\
         WIN_NAME.set(window.DYNAMIC_KEY, 1);\
     }\
     function addDefaultParams(url) {\
-        var _ua = navigator.userAgent;\
         var _isIOS = tools.mobile.isIOS() && tools.mobile.qqVersion();\
         var bkn = getBkn();\
         if (WIN_NAME.get(window.DYNAMIC_KEY) == 1) {\
