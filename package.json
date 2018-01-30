@@ -1,6 +1,6 @@
 {
   "name": "fis3-preprocessor-page",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "a fis3 plugin for page framework",
   "main": "index.js",
   "scripts": {
