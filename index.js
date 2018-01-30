@@ -99,7 +99,11 @@ var AFTER = "\
             });\
             (function(key) {\
                 require.getData(url, function(data) {\
-                    onGetData(key, data && data.result, total);\
+                    var result = data;\
+                    if (data.retcode === 0) {\
+                        result = data.result;\
+                    }\
+                    onGetData(key, result, total);\
                 }, function() {\
                     onGetData(key, {\
                         retcode: -1\
