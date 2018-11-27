@@ -6,8 +6,9 @@ var Syntax = estraverse.Syntax;
 
 var BEFORE = "window.onload = function() {\
     var _ua = navigator.userAgent.toLowerCase() || '';\
+    var isApp = _ua.indexOf('educationapp') != -1 || _ua.indexOf('eduapp') != -1;\ 
     function isWeiXin() {\
-        return _ua.indexOf('micromessenger') !== -1 || (_ua.indexOf('educationapp') != -1 && (getCookie('uid_type') == 2 || getCookie('uid_type') == 1001));\
+        return _ua.indexOf('micromessenger') !== -1 || (isApp && (getCookie('uid_type') == 2 || getCookie('uid_type') == 1001));\
     }\
     function getAuthKey() {\
         var a2 = getCookie('uid_a2');\
