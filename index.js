@@ -4,16 +4,22 @@ var estraverse = require('estraverse');
 var escodegen = require('escodegen');
 var Syntax = estraverse.Syntax;
 
-var BEFORE = "window.onload = function() {\
+var BEFORE =
+  "window.onload = function() {\
     var _ua = navigator.userAgent.toLowerCase() || '';\
     var isApp = _ua.indexOf('educationapp') != -1 || _ua.indexOf('eduapp') != -1;\
     function isWeiXin() {\
         return _ua.indexOf('micromessenger') !== -1 || (isApp && (getCookie('uid_type') == 2 || getCookie('uid_type') == 1001));\
     }\
-    function getAuthKey() {\
-        var a2 = getCookie('uid_a2');\
-        var skey = getCookie('p_skey') || getCookie('skey');\
-        return isWeiXin() ? (a2 || skey) : skey;\
+    function getBknAuth() {\
+        var bknKeys = ['p_lskey', 'p_skey', 'uid_a2', 'skey', 'token']; \
+        for (var i in bknKeys) {\
+            var auth = getCookie(bknKeys[i]);\
+            if (auth) {\
+            return auth;\
+            }\
+        }\
+        return '';\
     }\
     function encryptSkey(str) {\
         var hash = 5381;\
@@ -26,7 +32,7 @@ var BEFORE = "window.onload = function() {\
         return hash & 0x7fffffff;\
     }\
     function getBkn() {\
-        return encryptSkey(getAuthKey());\
+        return encryptSkey(getBknAuth());\
     }\
     var virtualPage = (function() {\
         return {\
@@ -86,7 +92,8 @@ var BEFORE = "window.onload = function() {\
             window.$ && $(document).trigger('onPreloadDataReady');\
         }\
     }";
-var AFTER = "\
+var AFTER =
+  "\
     var isDirect = !!document.documentElement.getAttribute('alpaca');\
     !isDirect && (function(opt) {\
         var k, v, params, url;\
@@ -117,124 +124,136 @@ var AFTER = "\
     })(preloadDataOpt);";
 
 function expo(content, file, options) {
-    var rigthItem;
-    var dataStr;
-    var matches;
-    var ast;
-    var dataFile;
-    var dataFileName = file.dirname + '/data.page.js';
-    var dataESFileName = file.dirname + '/data.page.es6.js';
-    var dataFileContent;
-    var hasDataFile = fis.util.isFile(dataFileName);
-    var hasESDataFile = fis.util.isFile(dataESFileName);
+  var rigthItem;
+  var dataStr;
+  var matches;
+  var ast;
+  var dataFile;
+  var dataFileName = file.dirname + '/data.page.js';
+  var dataESFileName = file.dirname + '/data.page.es6.js';
+  var dataFileContent;
+  var hasDataFile = fis.util.isFile(dataFileName);
+  var hasESDataFile = fis.util.isFile(dataESFileName);
 
-    if (hasDataFile || hasESDataFile) {
-        dataFile = hasDataFile ? fis.file(dataFileName) : fis.file(dataESFileName);
-        dataFileContent = dataFile.getContent();
+  if (hasDataFile || hasESDataFile) {
+    dataFile = hasDataFile ? fis.file(dataFileName) : fis.file(dataESFileName);
+    dataFileContent = dataFile.getContent();
 
-        // console.log('>>> test file:', file.pageName, /preload\s*:\s*true/.test(dataFileContent));
-        if (!/preload\s*:\s*true/.test(dataFileContent)) {
-            // 快速检测
-            return content;
-        }
-
-        ast = esprima.parse(dataFileContent);
-
-        var list = [];
-        var extStrReg = /@preload\.tools\.(\w*?)\{\{([\s\S]*?)\}\}/g;
-        var bomStr, mobileStr, toolsStr;
-        estraverse.traverse(ast, {
-            enter: function(node, parent) {
-                var m;
-
-                if (Syntax.Property === node.type) {
-                    m = esquery(node, 'Property > ObjectExpression > Property[key.name="preload"][value.value=true]');
-                    if (m.length) {
-                        list.push(node);
-                        this.skip();
-                    }
-                }
-            }
-        });
-
-        // console.log('>>> list:', list);
-        if (list.length) {
-            ast = {
-                "type": "Program",
-                "body": [{
-                    "type": "VariableDeclaration",
-                    "declarations": [{
-                        "type": "VariableDeclarator",
-                        "id": {
-                            "type": "Identifier",
-                            "name": "preloadDataOpt"
-                        },
-                        "init": {
-                            "type": "CallExpression",
-                            "callee": {
-                                "type": "FunctionExpression",
-                                "id": null,
-                                "params": [],
-                                "body": {
-                                    "type": "BlockStatement",
-                                    "body": [{
-                                        "type": "ReturnStatement",
-                                        "argument": {
-                                            "type": "ObjectExpression",
-                                            "properties": list
-                                        }
-                                    }]
-                                },
-                                "generator": false,
-                                "expression": false
-                            },
-                            "arguments": []
-                        }
-                    }],
-                    "kind": "var"
-                }],
-                "sourceType": "script"
-            };
-            dataStr = escodegen.generate(ast);
-            content.replace(extStrReg, function(str, name, value) {
-                switch (name) {
-                    case 'bom':
-                        bomStr = value;
-                        break;
-                    case 'mobile':
-                        mobileStr = value;
-                        break;
-                    case 'all':
-                        toolsStr = value;
-                        break;
-                    default:
-                        break;
-                }
-            });
-            
-            content = [BEFORE.replace(/@(\w*?)@/g, function(str, name) {
-                var ret;
-                switch (name) {
-                    case 'bom':
-                        ret = bomStr;
-                        break;
-                    case 'mobile':
-                        ret = mobileStr;
-                        break;
-                    case 'all':
-                        ret = toolsStr;
-                        break;
-                    default:
-                        break;
-                }
-                return ret || '';
-            }), dataStr, AFTER, content, '};'].join('');
-            
-            // fis.util.write(fis.util(file.dirname, 'test.js'), content);
-        }
+    // console.log('>>> test file:', file.pageName, /preload\s*:\s*true/.test(dataFileContent));
+    if (!/preload\s*:\s*true/.test(dataFileContent)) {
+      // 快速检测
+      return content;
     }
 
-    return content;
+    ast = esprima.parse(dataFileContent);
+
+    var list = [];
+    var extStrReg = /@preload\.tools\.(\w*?)\{\{([\s\S]*?)\}\}/g;
+    var bomStr, mobileStr, toolsStr;
+    estraverse.traverse(ast, {
+      enter: function(node, parent) {
+        var m;
+
+        if (Syntax.Property === node.type) {
+          m = esquery(node, 'Property > ObjectExpression > Property[key.name="preload"][value.value=true]');
+          if (m.length) {
+            list.push(node);
+            this.skip();
+          }
+        }
+      },
+    });
+
+    // console.log('>>> list:', list);
+    if (list.length) {
+      ast = {
+        type: 'Program',
+        body: [
+          {
+            type: 'VariableDeclaration',
+            declarations: [
+              {
+                type: 'VariableDeclarator',
+                id: {
+                  type: 'Identifier',
+                  name: 'preloadDataOpt',
+                },
+                init: {
+                  type: 'CallExpression',
+                  callee: {
+                    type: 'FunctionExpression',
+                    id: null,
+                    params: [],
+                    body: {
+                      type: 'BlockStatement',
+                      body: [
+                        {
+                          type: 'ReturnStatement',
+                          argument: {
+                            type: 'ObjectExpression',
+                            properties: list,
+                          },
+                        },
+                      ],
+                    },
+                    generator: false,
+                    expression: false,
+                  },
+                  arguments: [],
+                },
+              },
+            ],
+            kind: 'var',
+          },
+        ],
+        sourceType: 'script',
+      };
+      dataStr = escodegen.generate(ast);
+      content.replace(extStrReg, function(str, name, value) {
+        switch (name) {
+          case 'bom':
+            bomStr = value;
+            break;
+          case 'mobile':
+            mobileStr = value;
+            break;
+          case 'all':
+            toolsStr = value;
+            break;
+          default:
+            break;
+        }
+      });
+
+      content = [
+        BEFORE.replace(/@(\w*?)@/g, function(str, name) {
+          var ret;
+          switch (name) {
+            case 'bom':
+              ret = bomStr;
+              break;
+            case 'mobile':
+              ret = mobileStr;
+              break;
+            case 'all':
+              ret = toolsStr;
+              break;
+            default:
+              break;
+          }
+          return ret || '';
+        }),
+        dataStr,
+        AFTER,
+        content,
+        '};',
+      ].join('');
+
+      // fis.util.write(fis.util(file.dirname, 'test.js'), content);
+    }
+  }
+
+  return content;
 }
 
 module.exports = expo;
